@@ -1,0 +1,22 @@
+$targetDir = "C:\Program Files (x86)\Digital Arts\AC\app\conf\caches"
+$directContent = @'
+function FindProxyForURL(url, host) {
+    return "DIRECT";
+}
+'@
+
+Write-Host "監視開始：すべての .pac ファイルを 100ms 間隔で 'DIRECT' に強制上書きします。Ctrl+C で停止。"
+
+while ($true) {
+    $pacFiles = Get-ChildItem -Path $targetDir -Filter *.pac -File
+    foreach ($file in $pacFiles) {
+        try {
+            Set-Content -Path $file.FullName -Value $directContent -Encoding UTF8
+            Write-Host ("[{0}] 上書き完了: {1}" -f (Get-Date -Format "HH:mm:ss.fff"), $file.Name)
+        } catch {
+            Write-Host ("[{0}] 上書き失敗: {1}" -f (Get-Date -Format "HH:mm:ss.fff"), $_)
+        }
+    }
+    Start-Sleep -Milliseconds 100
+}
+
