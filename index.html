@@ -2,16 +2,15 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>情報登録サイト (テスト)</title>
+    <title>情報登録サイト (Firestore連携)</title>
     <style>
-        /* 見やすいように少しだけスタイルを追加 */
         body { font-family: Arial, sans-serif; padding: 20px; }
         input[type="text"], button { margin-bottom: 10px; padding: 8px; width: 250px; }
     </style>
 </head>
 <body>
 
-    <h1>ユーザー情報登録フォーム (テスト)</h1>
+    <h1>ユーザー情報登録フォーム (Firestore連携)</h1>
     
     <form id="submissionForm">
         <input type="text" id="studentId" placeholder="学籍番号" required><br>
@@ -26,14 +25,73 @@
         <input type="checkbox" id="planC" name="plan" value="C">
         <label for="planC">プランCを希望</label><br><br>
         
-        <button type="submit">送信ボタン (今は何も保存されません)</button>
+        <button type="submit">送信してFirestoreに保存</button>
     </form>
 
     <hr>
+    
+    <p>送信後、Firestoreコンソールの「registrations_new」コレクションにデータが追加されます。</p>
 
-    <h2>テスト情報</h2>
-    <p>このページが正しく表示され、ボタンが押せるかを確認するための、純粋なHTMLフォームです。</p>
-    <p>フォーム送信後のデータ保存機能は、次のステップで追加します。</p>
+    <script type="module">
+        // =======================================================
+        // 🚀 ステップ 1: Firebase SDKの読み込みと設定
+        // =======================================================
+        // CDNからSDKを読み込みます
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-firestore.js";
 
+        // あなたのプロジェクト設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBevbEFDvSU6eQdmS0hLjd13Y5lmku6p3Y",
+            authDomain: "i-filter-avoid.firebaseapp.com",
+            projectId: "i-filter-avoid",
+            storageBucket: "i-filter-avoid.firebasestorage.app",
+            messagingSenderId: "938046560101",
+            appId: "1:938046560101:web:64957e4e017caf485c338c",
+            measurementId: "G-ZZF8VJ7VMZ"
+        };
+
+        // FirebaseアプリとFirestoreの初期化
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        // =======================================================
+        
+        const form = document.getElementById('submissionForm');
+        
+        form.addEventListener('submit', async (e) => {
+            // ブラウザの標準的な送信動作をキャンセル
+            e.preventDefault();
+
+            const studentId = document.getElementById('studentId').value;
+            const name = document.getElementById('name').value;
+            
+            // チェックボックスの状態を取得
+            const planA_checked = document.getElementById('planA').checked;
+            const planB_checked = document.getElementById('planB').checked;
+            const planC_checked = document.getElementById('planC').checked;
+            
+            // --- データをFirestoreに保存 ---
+            try {
+                // "registrations_new"コレクションにデータを保存します
+                const docRef = await addDoc(collection(db, "registrations_new"), {
+                    student_id: studentId,
+                    name: name,
+                    plan_A_desired: planA_checked,
+                    plan_B_desired: planB_checked,
+                    plan_C_desired: planC_checked,
+                    timestamp: new Date()
+                });
+                
+                alert("✅ 送信が完了し、データはFirestoreに保存されました！");
+                
+                // フォームの内容をクリア
+                form.reset(); 
+
+            } catch (error) {
+                console.error("データの書き込みエラー: ", error);
+                alert("❌ データの保存中にエラーが発生しました。コンソールとFirestoreのセキュリティルールを確認してください。");
+            }
+        });
+    </script>
 </body>
 </html>
