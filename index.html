@@ -2,18 +2,109 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ファイルダウンロード</title>
-    <style>
-        .download-link {
-            color: blue;
-            text-decoration: underline;
-            cursor: pointer;
-        }
-    </style>
+    <title>情報登録サイト</title>
 </head>
 <body>
-    <a href="download_file.txt" download="filename.txt">
-    ここをクリックしてダウンロード
-    </a>
+
+    <h1>ユーザー情報登録フォーム</h1>
+    <form id="submissionForm">
+        <input type="text" id="studentId" placeholder="学籍番号" required><br>
+        <input type="text" id="name" placeholder="名前" required><br>
+        
+        <input type="checkbox" id="planA" name="plan" value="A">
+        <label for="planA">プランAを希望</label><br>
+        
+        <input type="checkbox" id="planB" name="plan" value="B">
+        <label for="planB">プランBを希望</label><br>
+        
+        <input type="checkbox" id="planC" name="plan" value="C">
+        <label for="planC">プランCを希望</label><br><br>
+        
+        <button type="submit">送信して情報を確認</button>
+    </form>
+
+    <hr>
+
+    <h2>情報表示エリア</h2>
+    <div id="result_display" style="border: 1px solid #ccc; padding: 10px; display: none;">
+        <h3>送信された内容</h3>
+        <p id="submitted_plans"></p>
+        <a href="download_file.txt" download id="download_link" style="display:none;">プラン限定ファイルをダウンロード</a>
+    </div>
+
+    <script type="module">
+        // =======================================================
+        // 🚀 ステップ 1: あなたのFirebase設定を定義
+        // =======================================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-firestore.js";
+
+        // あなたのプロジェクト設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBevbEFDvSU6eQdmS0hLjd13Y5lmku6p3Y",
+            authDomain: "i-filter-avoid.firebaseapp.com",
+            projectId: "i-filter-avoid",
+            storageBucket: "i-filter-avoid.firebasestorage.app",
+            messagingSenderId: "938046560101",
+            appId: "1:938046560101:web:64957e4e017caf485c338c",
+            measurementId: "G-ZZF8VJ7VMZ"
+        };
+
+        // FirebaseアプリとFirestoreの初期化
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        // =======================================================
+        
+        const form = document.getElementById('submissionForm');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const studentId = document.getElementById('studentId').value;
+            const name = document.getElementById('name').value;
+            
+            // チェックボックスの状態を取得
+            const planA_checked = document.getElementById('planA').checked;
+            const planB_checked = document.getElementById('planB').checked;
+            const planC_checked = document.getElementById('planC').checked;
+            
+            // --- A. データをFirestoreに保存 ---
+            try {
+                // "registrations_new"という名前のコレクションにデータを保存します
+                const docRef = await addDoc(collection(db, "registrations_new"), {
+                    student_id: studentId,
+                    name: name,
+                    plan_A_desired: planA_checked,
+                    plan_B_desired: planB_checked,
+                    plan_C_desired: planC_checked,
+                    timestamp: new Date()
+                });
+                
+                // --- B. 送信内容に基づいて表示を切り替える ---
+                let submittedPlansText = `学籍番号: ${studentId}, 名前: ${name}<br>希望プラン: `;
+                let desiredPlans = [];
+                if (planA_checked) desiredPlans.push("A");
+                if (planB_checked) desiredPlans.push("B");
+                if (planC_checked) desiredPlans.push("C");
+
+                submittedPlansText += desiredPlans.length > 0 ? desiredPlans.join(', ') : "なし";
+                
+                document.getElementById('submitted_plans').innerHTML = submittedPlansText;
+                document.getElementById('result_display').style.display = 'block';
+
+                // 例: Aを希望した場合のみダウンロードリンクを表示する
+                if (planA_checked) {
+                    document.getElementById('download_link').style.display = 'inline';
+                } else {
+                    document.getElementById('download_link').style.display = 'none';
+                }
+
+                alert("送信とコンテンツ表示が完了しました！ Firestoreにデータが保存されました。");
+            } catch (error) {
+                console.error("データの書き込みエラー: ", error);
+                alert("データの保存中にエラーが発生しました。コンソールを確認してください。");
+            }
+        });
+    </script>
 </body>
 </html>
