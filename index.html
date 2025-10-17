@@ -22,6 +22,18 @@
             border-left: 3px solid #cc0000;
             background-color: #ffe0e0;
         }
+        .typing-consent-box {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px dashed #333;
+            background-color: #f9f9f9;
+        }
+        .typing-consent-box p strong {
+            display: block;
+            font-size: 1.1em;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -57,7 +69,7 @@
             <script>
                 // この部分はHTML内に埋め込まれているため、JavaScriptコードはそのままにします
                 const numSelect = document.getElementById('number');
-                if (numSelect && numSelect.options.length <= 1) { // 既に生成済みでないかチェック
+                if (numSelect && numSelect.options.length <= 1) { 
                     for (let i = 1; i <= 45; i++) {
                         const option = document.createElement('option');
                         option.value = i;
@@ -95,9 +107,10 @@
             </ul>
         </div>
         
-        <div class="checkbox-group">
-            <input type="checkbox" id="termsAgree" required>
-            <label for="termsAgree" style="display: inline;">利用規約に同意する ✓ (必須)</label>
+        <div class="typing-consent-box">
+            <label for="typingConsent">利用規約の内容を理解し、同意する場合、以下と同じ文字列を**正確に**入力してください:</label>
+            <strong>利用規約に同意します</strong>
+            <input type="text" id="typingConsent" required placeholder="ここに「利用規約に同意します」と入力">
         </div>
         
         <button type="submit">送信してFirestoreに保存</button>
@@ -123,6 +136,8 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        
+        const REQUIRED_CONSENT_TEXT = "利用規約に同意します";
         // =======================================================
         
         const form = document.getElementById('submissionForm');
@@ -138,13 +153,23 @@
             const name = document.getElementById('name').value;
             const iFilterAvoidChecked = document.getElementById('iFilterAvoid').checked;
             const fortiGuardAvoidChecked = document.getElementById('fortiGuardAvoid').checked;
-            const termsAgreed = document.getElementById('termsAgree').checked;
+            
+            const typedConsent = document.getElementById('typingConsent').value; // タイピングされた文字列を取得
 
             // --- 学籍番号の長さチェック (1～230文字) ---
             if (studentId.length === 0 || studentId.length > 230) {
                 alert(`⚠️ 学籍番号の長さが不正です。\n現在は ${studentId.length} 文字です。1文字以上230文字以内で入力してください。`);
                 return;
             }
+
+            // --- 利用規約のタイピングチェック ---
+            if (typedConsent !== REQUIRED_CONSENT_TEXT) {
+                alert(`⚠️ 利用規約への同意が確認できません。\n「${REQUIRED_CONSENT_TEXT}」を正確に入力してください。`);
+                return;
+            }
+            
+            // 同意済みフラグは true でFirestoreに保存
+            const termsAgreed = true; 
 
             // 選択されたプラン名テキストを生成
             let desiredPlans = [];
@@ -162,19 +187,16 @@
                     name: name,
                     iFilter_avoid: iFilterAvoidChecked,
                     fortiGuard_avoid: fortiGuardAvoidChecked,
-                    terms_agreed: termsAgreed,
+                    terms_agreed: termsAgreed, // タイピング確認が通ったので true
                     timestamp: new Date()
                 });
                 
                 // --- ページの切り替え処理 ---
-                
-                // i-filter回避を希望した場合に限定リンクを表示する例
                 const downloadHtml = iFilterAvoidChecked 
                     ? `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
                        <a href="download_file.txt" download style="color: blue; font-weight: bold;">[限定ファイルをダウンロード]</a>`
                     : `<p>特別な設定ファイルはありません。</p>`;
 
-                // bodyタグ全体を新しいHTMLで置き換える
                 document.body.innerHTML = `
                     <div class="success-page">
                         <h1>✅ 登録が完了しました！</h1>
@@ -184,7 +206,7 @@
                         <p><strong>学籍番号:</strong> ${studentId}</p>
                         <p><strong>お名前:</strong> ${name}</p>
                         <p><strong>希望オプション:</strong> ${plansText}</p>
-                        <p><strong>利用規約同意:</strong> ${termsAgreed ? 'はい' : 'いいえ'}</p>
+                        <p><strong>利用規約同意:</strong> はい</p>
                         <hr>
                         ${downloadHtml}
                         <p style="margin-top: 20px;"><a href="./">もう一度フォームに戻る</a></p>
@@ -192,7 +214,6 @@
                 `;
                 
             } catch (error) {
-                // エラーが発生した場合
                 console.error("❌ データの保存中にエラーが発生しました。エラー詳細:", error);
                 
                 document.body.innerHTML = `
