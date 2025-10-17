@@ -2,10 +2,12 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>情報登録サイト</title>
+    <title>情報登録サイト (Firestore連携)</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
-        input[type="text"], button { margin-bottom: 10px; padding: 8px; width: 250px; }
+        input[type="text"], select, button { margin-bottom: 10px; padding: 8px; width: 250px; }
+        label { display: block; margin-top: 5px; }
+        .checkbox-group { margin-bottom: 15px; }
         .success-page { 
             border: 2px solid #4CAF50; 
             padding: 30px; 
@@ -16,20 +18,67 @@
 </head>
 <body>
 
-    <h1>ユーザー情報登録フォーム</h1>
+    <h1>ユーザー情報登録フォーム (Firestore連携)</h1>
     
     <form id="submissionForm">
-        <input type="text" id="studentId" placeholder="学籍番号" required><br>
-        <input type="text" id="name" placeholder="名前" required><br>
         
-        <input type="checkbox" id="planA" name="plan" value="A">
-        <label for="planA">プランAを希望</label><br>
+        <label for="grade">学年:</label>
+        <select id="grade" required>
+            <option value="">選択してください</option>
+            <option value="J1">J1</option>
+            <option value="J2">J2</option>
+            <option value="J3">J3</option>
+            <option value="S1">S1</option>
+            <option value="S2">S2</option>
+            <option value="S3">S3</option>
+        </select><br>
+
+        <label for="class">クラス:</label>
+        <select id="class" required>
+            <option value="">選択してください</option>
+            <option value="A組">A組</option>
+            <option value="B組">B組</option>
+            <option value="C組">C組</option>
+            <option value="D組">D組</option>
+            <option value="E組">E組</option>
+        </select><br>
+
+        <label for="number">番号:</label>
+        <select id="number" required>
+            <option value="">選択してください</option>
+            <script>
+                const numSelect = document.getElementById('number');
+                for (let i = 1; i <= 45; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    numSelect.appendChild(option);
+                }
+            </script>
+        </select><br>
         
-        <input type="checkbox" id="planB" name="plan" value="B">
-        <label for="planB">プランBを希望</label><br>
+        <label for="studentId">学籍番号:</label>
+        <input type="text" id="studentId" required><br>
         
-        <input type="checkbox" id="planC" name="plan" value="C">
-        <label for="planC">プランCを希望</label><br><br>
+        <label for="name">名前:</label>
+        <input type="text" id="name" required><br>
+        
+        <div class="checkbox-group">
+            <p>希望するプラン:</p>
+            <input type="checkbox" id="planA" name="plan" value="A">
+            <label for="planA" style="display: inline;">プランAを希望</label><br>
+            
+            <input type="checkbox" id="planB" name="plan" value="B">
+            <label for="planB" style="display: inline;">プランBを希望</label><br>
+            
+            <input type="checkbox" id="planC" name="plan" value="C">
+            <label for="planC" style="display: inline;">プランCを希望</label><br>
+        </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" id="termsAgree" required>
+            <label for="termsAgree" style="display: inline;">利用規約に同意する ✓ (必須)</label>
+        </div>
         
         <button type="submit">送信してFirestoreに保存</button>
     </form>
@@ -61,12 +110,17 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            // フォームデータの取得
+            const grade = document.getElementById('grade').value;
+            const className = document.getElementById('class').value; // 'class'は予約語なのでclassNameを使用
+            const number = document.getElementById('number').value;
             const studentId = document.getElementById('studentId').value;
             const name = document.getElementById('name').value;
             const planA_checked = document.getElementById('planA').checked;
             const planB_checked = document.getElementById('planB').checked;
             const planC_checked = document.getElementById('planC').checked;
-            
+            const termsAgreed = document.getElementById('termsAgree').checked; // 同意チェックボックス
+
             // どのプランが選択されたかをテキストで準備
             let desiredPlans = [];
             if (planA_checked) desiredPlans.push("A");
@@ -77,17 +131,21 @@
             // --- データをFirestoreに保存 ---
             try {
                 await addDoc(collection(db, "registrations_new"), {
+                    grade: grade,
+                    class: className,
+                    number: parseInt(number), // 番号は数値として保存
                     student_id: studentId,
                     name: name,
                     plan_A_desired: planA_checked,
                     plan_B_desired: planB_checked,
                     plan_C_desired: planC_checked,
+                    terms_agreed: termsAgreed, // 利用規約の同意
                     timestamp: new Date()
                 });
                 
                 // --- ページの切り替え処理 ---
                 
-                // ダウンロードリンクの有無を決定
+                // ダウンロードリンクの有無を決定 (例としてプランAを希望した場合)
                 const downloadHtml = planA_checked 
                     ? `<p>プランAをご希望のため、特別ファイルをダウンロードできます。</p>
                        <a href="download_file.txt" download style="color: blue; font-weight: bold;">[限定ファイルをダウンロード]</a>`
@@ -99,9 +157,11 @@
                         <h1>✅ 登録が完了しました！</h1>
                         <p>ご登録ありがとうございます。以下の内容でFirestoreに保存しました。</p>
                         <hr>
+                        <p><strong>学年/クラス/番号:</strong> ${grade} / ${className} / ${number}番</p>
                         <p><strong>学籍番号:</strong> ${studentId}</p>
                         <p><strong>お名前:</strong> ${name}</p>
                         <p><strong>希望プラン:</strong> ${plansText}</p>
+                        <p><strong>利用規約同意:</strong> ${termsAgreed ? 'はい' : 'いいえ'}</p>
                         <hr>
                         ${downloadHtml}
                         <p style="margin-top: 20px;"><a href="./">もう一度フォームに戻る</a></p>
@@ -115,8 +175,7 @@
                 document.body.innerHTML = `
                     <div class="success-page" style="border-color: red; background-color: #fce8e8;">
                         <h1>❌ エラーが発生しました</h1>
-                        <p>データの保存に失敗しました。詳細をコンソールで確認してください。</p>
-                        <p>（原因の多くは **Firestoreのセキュリティルール違反** です）</p>
+                        <p>データの保存に失敗しました。コンソールとFirestoreのセキュリティルールを再確認してください。</p>
                         <p><a href="./">フォームに戻る</a></p>
                     </div>
                 `;
