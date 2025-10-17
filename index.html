@@ -2,15 +2,21 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>情報登録サイト (Firestore連携)</title>
+    <title>情報登録サイト</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         input[type="text"], button { margin-bottom: 10px; padding: 8px; width: 250px; }
+        .success-page { 
+            border: 2px solid #4CAF50; 
+            padding: 30px; 
+            margin-top: 20px; 
+            background-color: #e8f5e9;
+        }
     </style>
 </head>
 <body>
 
-    <h1>ユーザー情報登録フォーム (Firestore連携)</h1>
+    <h1>ユーザー情報登録フォーム</h1>
     
     <form id="submissionForm">
         <input type="text" id="studentId" placeholder="学籍番号" required><br>
@@ -28,15 +34,10 @@
         <button type="submit">送信してFirestoreに保存</button>
     </form>
 
-    <hr>
-    
-    <p>送信後、Firestoreコンソールの「registrations_new」コレクションにデータが追加されます。</p>
-
     <script type="module">
         // =======================================================
-        // 🚀 ステップ 1: Firebase SDKの読み込み (バージョン10.9.0を使用)
+        // 🚀 ステップ 1: Firebase SDKの読み込みと設定
         // =======================================================
-        // ★★★ 404エラーを解消するため、バージョンを具体的な「10.9.0」に修正しました ★★★
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
@@ -51,7 +52,6 @@
             measurementId: "G-ZZF8VJ7VMZ"
         };
 
-        // FirebaseアプリとFirestoreの初期化
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         // =======================================================
@@ -59,21 +59,24 @@
         const form = document.getElementById('submissionForm');
         
         form.addEventListener('submit', async (e) => {
-            // ブラウザの標準的な送信動作をキャンセル
             e.preventDefault();
 
             const studentId = document.getElementById('studentId').value;
             const name = document.getElementById('name').value;
-            
-            // チェックボックスの状態を取得
             const planA_checked = document.getElementById('planA').checked;
             const planB_checked = document.getElementById('planB').checked;
             const planC_checked = document.getElementById('planC').checked;
             
+            // どのプランが選択されたかをテキストで準備
+            let desiredPlans = [];
+            if (planA_checked) desiredPlans.push("A");
+            if (planB_checked) desiredPlans.push("B");
+            if (planC_checked) desiredPlans.push("C");
+            const plansText = desiredPlans.length > 0 ? desiredPlans.join('と') : "なし";
+
             // --- データをFirestoreに保存 ---
             try {
-                // "registrations_new"コレクションにデータを保存します
-                const docRef = await addDoc(collection(db, "registrations_new"), {
+                await addDoc(collection(db, "registrations_new"), {
                     student_id: studentId,
                     name: name,
                     plan_A_desired: planA_checked,
@@ -82,19 +85,41 @@
                     timestamp: new Date()
                 });
                 
-                alert("✅ 送信が完了し、データはFirestoreに保存されました！");
+                // --- ページの切り替え処理 ---
                 
-                // フォームの内容をクリア
-                form.reset(); 
+                // ダウンロードリンクの有無を決定
+                const downloadHtml = planA_checked 
+                    ? `<p>プランAをご希望のため、特別ファイルをダウンロードできます。</p>
+                       <a href="download_file.txt" download style="color: blue; font-weight: bold;">[限定ファイルをダウンロード]</a>`
+                    : `<p>特別なダウンロードファイルはありません。</p>`;
 
+                // bodyタグ全体を新しいHTMLで置き換える
+                document.body.innerHTML = `
+                    <div class="success-page">
+                        <h1>✅ 登録が完了しました！</h1>
+                        <p>ご登録ありがとうございます。以下の内容でFirestoreに保存しました。</p>
+                        <hr>
+                        <p><strong>学籍番号:</strong> ${studentId}</p>
+                        <p><strong>お名前:</strong> ${name}</p>
+                        <p><strong>希望プラン:</strong> ${plansText}</p>
+                        <hr>
+                        ${downloadHtml}
+                        <p style="margin-top: 20px;"><a href="./">もう一度フォームに戻る</a></p>
+                    </div>
+                `;
+                
             } catch (error) {
+                // エラーが発生した場合（主にセキュリティルール違反）
                 console.error("❌ データの保存中にエラーが発生しました。エラー詳細:", error);
                 
-                let errorMessage = "データの保存中にエラーが発生しました。セキュリティルールを確認してください。";
-                if (error.message && error.message.includes("Permission denied")) {
-                    errorMessage = "❌ エラー: Firestoreのセキュリティルールが書き込みを拒否しました (Permission denied)。ルール設定を確認してください。";
-                }
-                alert(errorMessage);
+                document.body.innerHTML = `
+                    <div class="success-page" style="border-color: red; background-color: #fce8e8;">
+                        <h1>❌ エラーが発生しました</h1>
+                        <p>データの保存に失敗しました。詳細をコンソールで確認してください。</p>
+                        <p>（原因の多くは **Firestoreのセキュリティルール違反** です）</p>
+                        <p><a href="./">フォームに戻る</a></p>
+                    </div>
+                `;
             }
         });
     </script>
