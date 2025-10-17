@@ -34,6 +34,28 @@
             margin-top: 5px;
             margin-bottom: 5px;
         }
+        
+        /* 利用規約の表示/非表示のためのスタイル */
+        #toggleLink {
+            cursor: pointer; /* マウスカーソルをポインターにする */
+            color: blue;
+            text-decoration: underline;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        #termsContent {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+            max-height: 0; /* 初期状態で非表示 */
+            overflow: hidden; /* スムーズな開閉のため */
+            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+            background-color: #fff;
+        }
+        #termsContent.open {
+            max-height: 300px; /* 開いたときの最大高 (内容に合わせて調整) */
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -67,7 +89,6 @@
         <select id="number" required>
             <option value="">選択してください</option>
             <script>
-                // この部分はHTML内に埋め込まれているため、JavaScriptコードはそのままにします
                 const numSelect = document.getElementById('number');
                 if (numSelect && numSelect.options.length <= 1) { 
                     for (let i = 1; i <= 45; i++) {
@@ -108,7 +129,21 @@
         </div>
         
         <div class="typing-consent-box">
-            <label for="typingConsent">利用規約の内容を理解し、同意する場合、以下と同じ文字列を**正確に**入力してください:</label>
+            
+            <span id="toggleLink">▶ 利用規約はこちら</span>
+            <p>利用規約の内容を理解し、同意する場合、以下と同じ文字列を<strong>正確に</strong>入力してください:</p>
+            
+            <div id="termsContent">
+                <p><strong>【本サービスの利用規約】</strong></p>
+                <ol>
+                    <li>本サービスは、利用者の自己責任において使用されるものとします。</li>
+                    <li>学校の規定や指導に従い、フィルタリング回避は適切な目的でのみ利用してください。</li>
+                    <li>本サービスの利用によって生じた一切の損害、トラブルについて、当サイトは責任を負いません。</li>
+                    <li>故意または過失により、学校または他者に損害を与えた場合、利用者はその責任を負うものとします。</li>
+                </ol>
+                <p style="margin-top: 10px;">（※この内容はあくまで例です。実際の利用規約をここに記述してください。）</p>
+            </div>
+
             <strong>利用規約に同意します</strong>
             <input type="text" id="typingConsent" required placeholder="ここに「利用規約に同意します」と入力">
         </div>
@@ -123,7 +158,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        // あなたのプロジェクト設定
         const firebaseConfig = {
             apiKey: "AIzaSyBevbEFDvSU6eQdmS0hLjd13Y5lmku6p3Y",
             authDomain: "i-filter-avoid.firebaseapp.com",
@@ -141,7 +175,16 @@
         // =======================================================
         
         const form = document.getElementById('submissionForm');
-        
+        const toggleLink = document.getElementById('toggleLink');
+        const termsContent = document.getElementById('termsContent');
+
+        // --- トグル機能の追加 ---
+        toggleLink.addEventListener('click', () => {
+            const isOpen = termsContent.classList.toggle('open');
+            toggleLink.textContent = isOpen ? '▼ 利用規約を閉じます' : '▶ 利用規約はこちら';
+        });
+
+        // --- フォーム送信ロジック ---
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -153,22 +196,18 @@
             const name = document.getElementById('name').value;
             const iFilterAvoidChecked = document.getElementById('iFilterAvoid').checked;
             const fortiGuardAvoidChecked = document.getElementById('fortiGuardAvoid').checked;
-            
-            const typedConsent = document.getElementById('typingConsent').value; // タイピングされた文字列を取得
+            const typedConsent = document.getElementById('typingConsent').value;
 
-            // --- 学籍番号の長さチェック (1～230文字) ---
+            // --- バリデーション ---
             if (studentId.length === 0 || studentId.length > 230) {
                 alert(`⚠️ 学籍番号の長さが不正です。\n現在は ${studentId.length} 文字です。1文字以上230文字以内で入力してください。`);
                 return;
             }
-
-            // --- 利用規約のタイピングチェック ---
             if (typedConsent !== REQUIRED_CONSENT_TEXT) {
                 alert(`⚠️ 利用規約への同意が確認できません。\n「${REQUIRED_CONSENT_TEXT}」を正確に入力してください。`);
                 return;
             }
             
-            // 同意済みフラグは true でFirestoreに保存
             const termsAgreed = true; 
 
             // 選択されたプラン名テキストを生成
@@ -187,7 +226,7 @@
                     name: name,
                     iFilter_avoid: iFilterAvoidChecked,
                     fortiGuard_avoid: fortiGuardAvoidChecked,
-                    terms_agreed: termsAgreed, // タイピング確認が通ったので true
+                    terms_agreed: termsAgreed,
                     timestamp: new Date()
                 });
                 
