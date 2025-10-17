@@ -16,7 +16,7 @@
         }
         .note { 
             font-size: 0.9em; 
-            color: #cc0000; /* 赤色で目立たせる */
+            color: #cc0000;
             margin-top: 10px;
             padding: 8px;
             border-left: 3px solid #cc0000;
@@ -55,18 +55,23 @@
         <select id="number" required>
             <option value="">選択してください</option>
             <script>
+                // この部分はHTML内に埋め込まれているため、JavaScriptコードはそのままにします
                 const numSelect = document.getElementById('number');
-                for (let i = 1; i <= 45; i++) {
-                    const option = document.createElement('option');
-                    option.value = i;
-                    option.textContent = i;
-                    numSelect.appendChild(option);
+                if (numSelect && numSelect.options.length <= 1) { // 既に生成済みでないかチェック
+                    for (let i = 1; i <= 45; i++) {
+                        const option = document.createElement('option');
+                        option.value = i;
+                        option.textContent = i;
+                        numSelect.appendChild(option);
+                    }
                 }
             </script>
         </select><br>
         
         <label for="studentId">学籍番号:</label>
-        <input type="text" id="studentId" required><br>
+        <input type="text" id="studentId" required 
+               placeholder="半角英数字で入力 (1～230文字)" 
+               pattern="^[a-zA-Z0-9]+$"><br>
         
         <label for="name">名前:</label>
         <input type="text" id="name" required><br>
@@ -79,9 +84,6 @@
             
             <input type="checkbox" id="fortiGuardAvoid" name="plan" value="fortiGuardAvoid">
             <label for="fortiGuardAvoid" style="display: inline;">FortiGuard回避を希望 (学校でのみかかる赤いマークのやつ)</label><br>
-            
-            <input type="checkbox" id="planC" name="plan" value="C">
-            <label for="planC" style="display: inline;">プランCを希望</label><br> 
         </div>
         
         <div class="note">
@@ -89,7 +91,7 @@
             <ul>
                 <li><strong>i-filter回避のみを選択した場合:</strong> 学校では使用不可。ただし、Wi-Fiが学校でなければどこでも使えます。</li>
                 <li><strong>FortiGuard回避のみを選択した場合:</strong> 学校で使えるようになります。ただし、i-filterはそのままかかり続けてしまいます。</li>
-                <li>すでに責任者の許可やこのサイトからi-filter回避を導入済みの場合は、**FortiGuard回避のみの選択**をお勧めします。</li>
+                <li>すでに責任者の許可やこのサイトからi-filter回避を導入済みの場合は、<strong>FortiGuard回避のみの選択</strong>をお勧めします。</li>
             </ul>
         </div>
         
@@ -134,20 +136,23 @@
             const number = document.getElementById('number').value;
             const studentId = document.getElementById('studentId').value;
             const name = document.getElementById('name').value;
-            // 新しいプラン名のチェックボックス状態を取得
             const iFilterAvoidChecked = document.getElementById('iFilterAvoid').checked;
             const fortiGuardAvoidChecked = document.getElementById('fortiGuardAvoid').checked;
-            const planC_checked = document.getElementById('planC').checked; 
             const termsAgreed = document.getElementById('termsAgree').checked;
+
+            // --- 学籍番号の長さチェック (1～230文字) ---
+            if (studentId.length === 0 || studentId.length > 230) {
+                alert(`⚠️ 学籍番号の長さが不正です。\n現在は ${studentId.length} 文字です。1文字以上230文字以内で入力してください。`);
+                return;
+            }
 
             // 選択されたプラン名テキストを生成
             let desiredPlans = [];
             if (iFilterAvoidChecked) desiredPlans.push("i-filter回避");
             if (fortiGuardAvoidChecked) desiredPlans.push("FortiGuard回避");
-            if (planC_checked) desiredPlans.push("プランC");
             const plansText = desiredPlans.length > 0 ? desiredPlans.join('と') : "なし";
 
-            // --- データをFirestoreに保存 (フィールド名も新しい名前に変更) ---
+            // --- データをFirestoreに保存 ---
             try {
                 await addDoc(collection(db, "registrations_new"), {
                     grade: grade,
@@ -155,9 +160,8 @@
                     number: parseInt(number),
                     student_id: studentId,
                     name: name,
-                    iFilter_avoid: iFilterAvoidChecked,      // 新しいフィールド名
-                    fortiGuard_avoid: fortiGuardAvoidChecked, // 新しいフィールド名
-                    plan_C_desired: planC_checked,
+                    iFilter_avoid: iFilterAvoidChecked,
+                    fortiGuard_avoid: fortiGuardAvoidChecked,
                     terms_agreed: termsAgreed,
                     timestamp: new Date()
                 });
@@ -194,7 +198,7 @@
                 document.body.innerHTML = `
                     <div class="success-page" style="border-color: red; background-color: #fce8e8;">
                         <h1>❌ エラーが発生しました</h1>
-                        <p>データの保存に失敗しました。詳細をコンソールで確認してください。</p>
+                        <p>データの保存に失敗しました。コンソールとFirestoreのセキュリティルールを再確認してください。</p>
                         <p><a href="./">フォームに戻る</a></p>
                     </div>
                 `;
