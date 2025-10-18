@@ -2,12 +2,26 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>情報登録サイト (Firestore連携)</title>
+    <title>らくらくつーしん - 情報登録サイト</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        input[type="text"], select, button { margin-bottom: 10px; padding: 8px; width: 250px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            margin-bottom: 80px; /* フッターのためのスペース */
+            position: relative;
+            min-height: 100vh;
+        }
+        input[type="text"], select, button { 
+            margin-bottom: 10px; 
+            padding: 8px; 
+            width: 250px; 
+        }
         label { display: block; margin-top: 5px; }
-        .checkbox-group { margin-bottom: 15px; border: 1px solid #ccc; padding: 10px; }
+        .checkbox-group { 
+            margin-bottom: 15px; 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+        }
         .success-page { 
             border: 2px solid #4CAF50; 
             padding: 30px; 
@@ -28,16 +42,15 @@
             border: 1px dashed #333;
             background-color: #f9f9f9;
         }
-        .typing-consent-box p strong {
+        .typing-consent-box strong {
             display: block;
             font-size: 1.1em;
             margin-top: 5px;
             margin-bottom: 5px;
         }
-        
         /* 利用規約の表示/非表示のためのスタイル */
         #toggleLink {
-            cursor: pointer; /* マウスカーソルをポインターにする */
+            cursor: pointer; 
             color: blue;
             text-decoration: underline;
             margin-bottom: 5px;
@@ -45,22 +58,41 @@
         }
         #termsContent {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 0; /* 初期状態で非表示にするため */
             margin-bottom: 15px;
-            max-height: 0; /* 初期状態で非表示 */
-            overflow: hidden; /* スムーズな開閉のため */
-            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+            max-height: 0; 
+            overflow: hidden; 
+            transition: max-height 0.3s ease-in-out;
             background-color: #fff;
         }
         #termsContent.open {
-            max-height: 300px; /* 開いたときの最大高 (内容に合わせて調整) */
+            max-height: 300px; 
             padding: 10px;
         }
+        /* ★ 追加したフッタースタイル ★ */
+        .footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px 20px;
+            background-color: #f1f1f1;
+            text-align: center;
+            font-size: 0.8em;
+            color: #555;
+            box-sizing: border-box;
+        }
+        .footer a {
+            color: #0066cc;
+            text-decoration: none;
+        }
     </style>
+    
+    <script src="https://www.google.com/recaptcha/api.js?render=6Lc_dO4rAAAAACH772hojZiR43w795Df2KAQ4Pk2"></script>
 </head>
 <body>
 
-    <h1>ユーザー情報登録フォーム (Firestore連携)</h1>
+    <h1>らくらくつーしん - ユーザー情報登録フォーム</h1>
     
     <form id="submissionForm">
         
@@ -125,6 +157,7 @@
                 <li><strong>i-filter回避のみを選択した場合:</strong> 学校では使用不可。ただし、Wi-Fiが学校でなければどこでも使えます。</li>
                 <li><strong>FortiGuard回避のみを選択した場合:</strong> 学校で使えるようになります。ただし、i-filterはそのままかかり続けてしまいます。</li>
                 <li>すでに責任者の許可やこのサイトからi-filter回避を導入済みの場合は、<strong>FortiGuard回避のみの選択</strong>をお勧めします。</li>
+                <li>**FortiGuard回避のみを選択した場合:** 万一の操作ミスの可能性を考慮し、開発者が**直接利用者のもとへ**向かいます。承認された後にのみ利用可能となります。</li>
             </ul>
         </div>
         
@@ -150,30 +183,28 @@
             <input type="text" id="typingConsent" required placeholder="ここに「利用規約に同意します」と入力">
         </div>
         
-        <button type="submit">送信してFirestoreに保存</button>
+        <button type="submit">この内容で送信</button>
     </form>
+    
+    <div class="footer">
+        <p>開発者のGmail:<a href="mailto:contact.eazy.networking@gmail.com">contact.eazy.networking@gmail.com</a></p>
+        <p>気軽にご相談ください。</p>
+        <p>©らくらくつーしん開発者</p>
+    </div>
 
     <script type="module">
         // =======================================================
-        // 🚀 ステップ 1: Firebase SDKの読み込みと設定
+        // 🚀 ステップ 1: Functions 連携用の設定
         // =======================================================
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        // ★ セキュリティのため、Firestore SDKの直接初期化は削除します。
+        // ★ Functions経由の送信に切り替えるため、以下の定数を使用します。
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBevbEFDvSU6eQdmS0hLjd13Y5lmku6p3Y",
-            authDomain: "i-filter-avoid.firebaseapp.com",
-            projectId: "i-filter-avoid",
-            storageBucket: "i-filter-avoid.firebasestorage.app",
-            messagingSenderId: "938046560101",
-            appId: "1:938046560101:web:64957e4e017caf485c338c",
-            measurementId: "G-ZZF8VJ7VMZ"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
         const REQUIRED_CONSENT_TEXT = "利用規約に同意します";
+        
+        // 【重要】reCAPTCHA導入後のFunctionsのURLをここに設定してください。
+        const FUNCTIONS_URL = "ここにデプロイ後のFunctionsのURLを貼り付けます"; 
+        const RECAPTCHA_SITE_KEY = "6Lc_dO4rAAAAACH772hojZiR43w795Df2KAQ4Pk2"; 
+        
         // =======================================================
         
         const form = document.getElementById('submissionForm');
@@ -186,7 +217,7 @@
             toggleLink.textContent = isOpen ? '▼ 利用規約を閉じます' : '▶ 利用規約はこちら';
         });
 
-        // --- フォーム送信ロジック ---
+        // --- フォーム送信ロジック (Functions 連携版) ---
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -198,11 +229,12 @@
             const name = document.getElementById('name').value;
             const iFilterAvoidChecked = document.getElementById('iFilterAvoid').checked;
             const fortiGuardAvoidChecked = document.getElementById('fortiGuardAvoid').checked;
-            const typedConsent = document.getElementById('typingConsent').value;
+            const typedConsent = document.getElementById('typingConsent').value; 
 
             // --- バリデーション ---
-            if (studentId.length === 0 || studentId.length > 2025230) {
-                alert(`⚠️ 学籍番号の長さが不正です。\n現在は ${studentId.length} 文字です。7桁以内で入力してください。`);
+            if (studentId.length === 0 || studentId.length > 230) {
+                // 学籍番号のバリデーションは前回合意した230文字を上限とします
+                alert(`⚠️ 学籍番号の長さが不正です。\n現在は ${studentId.length} 文字です。1文字以上230文字以内で入力してください。`);
                 return;
             }
             if (typedConsent !== REQUIRED_CONSENT_TEXT) {
@@ -218,9 +250,19 @@
             if (fortiGuardAvoidChecked) desiredPlans.push("FortiGuard回避");
             const plansText = desiredPlans.length > 0 ? desiredPlans.join('と') : "なし";
 
-            // --- データをFirestoreに保存 ---
+            // --- データをFunctionsに送信するロジック (reCAPTCHA導入後の安全な方法) ---
             try {
-                await addDoc(collection(db, "registrations_new"), {
+                // 1. reCAPTCHAトークンの取得
+                const token = await new Promise(resolve => {
+                    grecaptcha.ready(function() {
+                        grecaptcha.execute(RECAPTCHA_SITE_KEY, {action: 'submit'}).then(function(t) {
+                            resolve(t);
+                        });
+                    });
+                });
+
+                // 2. フォームデータとトークンをFunctionsに送信
+                const formData = {
                     grade: grade,
                     class: className,
                     number: parseInt(number),
@@ -229,38 +271,61 @@
                     iFilter_avoid: iFilterAvoidChecked,
                     fortiGuard_avoid: fortiGuardAvoidChecked,
                     terms_agreed: termsAgreed,
-                    timestamp: new Date()
-                });
-                
-                // --- ページの切り替え処理 ---
-                const downloadHtml = iFilterAvoidChecked 
-                    ? `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
-                       <a href="download_file.txt" download style="color: blue; font-weight: bold;">[限定ファイルをダウンロード]</a>`
-                    : `<p>特別な設定ファイルはありません。</p>`;
+                };
 
-                document.body.innerHTML = `
-                    <div class="success-page">
-                        <h1>✅ 登録が完了しました！</h1>
-                        <p>ご登録ありがとうございます。以下の内容でFirestoreに保存しました。</p>
-                        <hr>
-                        <p><strong>学年/クラス/番号:</strong> ${grade} / ${className} / ${number}番</p>
-                        <p><strong>学籍番号:</strong> ${studentId}</p>
-                        <p><strong>お名前:</strong> ${name}</p>
-                        <p><strong>希望オプション:</strong> ${plansText}</p>
-                        <p><strong>利用規約同意:</strong> はい</p>
-                        <hr>
-                        ${downloadHtml}
-                        <p style="margin-top: 20px;"><a href="./">もう一度フォームに戻る</a></p>
-                    </div>
-                `;
+                const response = await fetch(FUNCTIONS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: formData, token: token }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    // --- ページの切り替え処理 (成功) ---
+                    
+                    // FortiGuardのみ選択時の特別なメッセージ
+                    const fortiguardCheckHtml = (fortiGuardAvoidChecked && !iFilterAvoidChecked)
+                        ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による**直接承認**後に利用可能となります。</p>`
+                        : '';
+
+                    // ダウンロードリンク
+                    const downloadHtml = iFilterAvoidChecked 
+                        ? `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
+                           <a href="download_file.txt" download style="color: blue; font-weight: bold;">[限定ファイルをダウンロード]</a>`
+                        : `<p>特別な設定ファイルはありません。</p>`;
+
+                    // 成功画面のHTMLを生成
+                    document.body.innerHTML = `
+                        <div class="success-page">
+                            <h1>✅ 登録が完了しました！</h1>
+                            <p>ご登録ありがとうございます。以下の内容で送信しました。</p>
+                            <hr>
+                            <p><strong>学年/クラス/番号:</strong> ${grade} / ${className} / ${number}番</p>
+                            <p><strong>学籍番号:</strong> ${studentId}</p>
+                            <p><strong>お名前:</strong> ${name}</p>
+                            <p><strong>希望オプション:</strong> ${plansText}</p>
+                            <p><strong>利用規約同意:</strong> はい</p>
+                            <hr>
+                            ${fortiguardCheckHtml}
+                            ${downloadHtml}
+                            <p style="margin-top: 20px;"><a href="./">もう一度フォームに戻る</a></p>
+                        </div>
+                    `;
+                    
+                } else {
+                    // Functionsでエラーが発生した場合 (スコア不足、Functionsエラーなど)
+                    alert(`⚠️ 登録失敗: ${result.message || '予期せぬエラー'}\nボット判定の可能性があります。`);
+                    console.error("Functions Error:", result);
+                }
                 
             } catch (error) {
-                console.error("❌ データの保存中にエラーが発生しました。エラー詳細:", error);
+                console.error("❌ データ送信中にエラーが発生しました。エラー詳細:", error);
                 
                 document.body.innerHTML = `
                     <div class="success-page" style="border-color: red; background-color: #fce8e8;">
                         <h1>❌ エラーが発生しました</h1>
-                        <p>データの保存に失敗しました。コンソールとFirestoreのセキュリティルールを再確認してください。</p>
+                        <p>データの送信に失敗しました。コンソールとFUNCTIONS_URLを再確認してください。</p>
                         <p><a href="./">フォームに戻る</a></p>
                     </div>
                 `;
