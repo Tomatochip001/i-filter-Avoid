@@ -7,7 +7,8 @@
         body { 
             font-family: Arial, sans-serif; 
             padding: 20px; 
-            margin-bottom: 80px; /* フッターのためのスペース */
+            /* フッターが重ならないように、フッターの高さ（約80px）＋余白分を確保 */
+            margin-bottom: 100px; 
             position: relative;
             min-height: 100vh;
         }
@@ -58,7 +59,7 @@
         }
         #termsContent {
             border: 1px solid #ddd;
-            padding: 0; /* 初期状態で非表示にするため */
+            padding: 0; 
             margin-bottom: 15px;
             max-height: 0; 
             overflow: hidden; 
@@ -69,9 +70,9 @@
             max-height: 300px; 
             padding: 10px;
         }
-        /* ★ 追加したフッタースタイル ★ */
+        /* ★ フッタースタイルの修正：position: fixed/sticky に変更し、ページ最下部に固定します ★ */
         .footer {
-            position: absolute;
+            position: fixed; /* 画面下部に固定 */
             bottom: 0;
             left: 0;
             width: 100%;
@@ -81,11 +82,15 @@
             font-size: 0.8em;
             color: #555;
             box-sizing: border-box;
+            border-top: 1px solid #ccc; /* 上端の境界線を追加 */
+            z-index: 10; /* 他の要素の上に表示 */
         }
         .footer a {
             color: #0066cc;
             text-decoration: none;
         }
+        /* body の margin-bottom を 100px に増やし、フッターとコンテンツの重なりを解消 */
+        /* body { margin-bottom: 100px; } は <style> の最初で定義済み */
     </style>
     
     <script src="https://www.google.com/recaptcha/api.js?render=6Lc_dO4rAAAAACH772hojZiR43w795Df2KAQ4Pk2"></script>
@@ -135,7 +140,7 @@
         
         <label for="studentId">学籍番号:</label>
         <input type="text" id="studentId" required 
-               placeholder="半角英数字で入力 (1～230文字)" 
+               placeholder="半角英数字で入力 (7桁で入学年度と靴の番号)" 
                pattern="^[a-zA-Z0-9]+$"><br>
         
         <label for="name">名前:</label>
@@ -196,9 +201,6 @@
         // =======================================================
         // 🚀 ステップ 1: Functions 連携用の設定
         // =======================================================
-        // ★ セキュリティのため、Firestore SDKの直接初期化は削除します。
-        // ★ Functions経由の送信に切り替えるため、以下の定数を使用します。
-
         const REQUIRED_CONSENT_TEXT = "利用規約に同意します";
         
         // 【重要】reCAPTCHA導入後のFunctionsのURLをここに設定してください。
