@@ -1,7 +1,7 @@
 # i-filter-Avoid
 
 Link
-
-https://tomatochip001.github.io/i-filter-Avoid/
-
 https://i-filter-avoid.pages.dev
+https://tomatochip001.github.io/i-filter-Avoid/
+https://what-an-new-i-filter-avoid.vercel.app/
+
