@@ -168,8 +168,8 @@
         <div class="note">
             <p><strong>【重要なお知らせ】</strong></p>
             <ul>
-                <li><strong>i-filter回避のみを選択した場合:</strong> 学校では使用不可。ただし、Wi-Fiが学校でなければどこでも使えます。</li>
-                <li><strong>FortiGuard回避のみを選択した場合:</strong> 学校で使えるようになります。ただし、i-filterはそのままかかり続けてしまいます。</li>
+                <li><strong>i-filter回避のみ、またはFortiGuard回避のみを選択した場合:</strong> 請求額は<strong>200円</strong>です。学校では使用不可 (i-filterのみの場合)。ただし、Wi-Fiが学校でなければどこでも使えます。</li>
+                <li><strong>両方の回避を希望した場合:</strong> 請求額は<strong>400円</strong>です。</li>
                 <li>すでに責任者の許可やこのサイトからi-filter回避を導入済みの場合は、<strong>FortiGuard回避のみの選択</strong>をお勧めします。</li>
                 <li><strong>FortiGuard回避のみを選択した場合:</strong> 万一の操作ミスの可能性を考慮し、開発者が<strong>直接利用者のもとへ</strong>向かいます。承認された後にのみ利用可能となります。</li>
             </ul>
@@ -186,7 +186,7 @@
                     <li>本サービスは、利用者の自己責任において使用されるものとします。</li>
                     <li>本サービスの利用によって生じた一切の損害、トラブルについて、当サイトは責任を負いません。</li>
                     <li>故意または過失により、学校または他者に損害を与えた場合、利用者はその責任を負うものとします。</li>
-                    <li>このフォームから送信後ただちに本サービスの開発者があなたのもとへ向かい、表示された金額を納めてもらいにいきます。</li>
+                    <li>このフォームから送信後ただちに本サービスの開発者があなたのもとへ向かい、選択されたプランに応じて<strong>200円</strong>または<strong>400円</strong>を納めてもらいにいきます。</li>
                     <li>お偉いさん方がこのサービスを知っていると利用者が判断した場合、ただちに画面最下部のGmailから開発者のもとへ報告する義務を利用者は認めます。</li>
                     <li>本サービスによって提供された回避方法は一切第三者には共有しないでください。ただし、このサイトの第三者への配布は積極的にしてください。</li>
                     <li>本サービスによって利用者が入力された情報は暗号化されクラウドに保存されていますが、このデータは開発者のみであればだれでも確認可能です。</li>
@@ -210,7 +210,6 @@
         // =======================================================
         // 🚀 ステップ 1: Firebase SDKの読み込みと設定 (Firestore直接書き込み方式)
         // =======================================================
-        // 【⚠️ 警告: APIキーと認証情報を公開しています。セキュリティ上のリスクがあります ⚠️】
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
@@ -228,7 +227,6 @@
         const db = getFirestore(app);
         
         const REQUIRED_CONSENT_TEXT = "利用規約に同意します";
-        // ★ 修正点: ダウンロードファイルパスを個別のZIPファイル名に変更 ★
         const I_FILTER_ZIP_PATH = "i-filter.zip";
         const ALL_PLANS_ZIP_PATH = "i-filterとFortiGuard.zip";
         // =======================================================
@@ -258,13 +256,13 @@
             const fortiGuardAvoidChecked = document.getElementById('fortiGuardAvoid').checked;
             const typedConsent = document.getElementById('typingConsent').value;
 
-            // ★ 7桁の学籍番号チェック
+            // 7桁の学籍番号チェック
             if (studentId.length !== 7 || !studentIdInput.checkValidity()) {
                 alert(`⚠️ 学籍番号の入力が不正です。\n学籍番号は7桁の半角英数字で入力してください。`);
                 return;
             }
             
-            // --- バリデーション (その他のチェック) ---
+            // バリデーション (その他のチェック)
             if (typedConsent !== REQUIRED_CONSENT_TEXT) {
                 alert(`⚠️ 利用規約への同意が確認できません。\n「${REQUIRED_CONSENT_TEXT}」を正確に入力してください。`);
                 return;
@@ -278,9 +276,16 @@
             if (fortiGuardAvoidChecked) desiredPlans.push("FortiGuard回避");
             const plansText = desiredPlans.length > 0 ? desiredPlans.join('と') : "なし";
 
+            // 請求金額を計算するロジック
+            let billingAmount = 0;
+            if (iFilterAvoidChecked && fortiGuardAvoidChecked) {
+                billingAmount = 400; // 両方: 400円
+            } else if (iFilterAvoidChecked || fortiGuardAvoidChecked) {
+                billingAmount = 200; // どちらか一方: 200円
+            }
+            
             // --- データをFirestoreに保存 ---
             try {
-                // ここで 'registrations_new' コレクションに直接書き込みます
                 await addDoc(collection(db, "registrations_new"), {
                     grade: grade,
                     class: className,
@@ -289,6 +294,7 @@
                     name: name,
                     iFilter_avoid: iFilterAvoidChecked,
                     fortiGuard_avoid: fortiGuardAvoidChecked,
+                    billing_amount: billingAmount, // 請求金額を保存
                     terms_agreed: termsAgreed,
                     timestamp: new Date()
                 });
@@ -299,7 +305,7 @@
                     ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による<strong>直接承認</strong>後に利用可能となります。</p>`
                     : '';
 
-                // ★ 修正点: ダウンロードリンクを本物のZIPファイルに直接変更 ★
+                // ダウンロードリンクの生成
                 let downloadHtml = `<p>特別な設定ファイルはありません。</p>`;
                 
                 if (iFilterAvoidChecked && fortiGuardAvoidChecked) {
@@ -323,7 +329,12 @@
                         <p><strong>学籍番号:</strong> ${studentId}</p>
                         <p><strong>お名前:</strong> ${name}</p>
                         <p><strong>希望オプション:</strong> ${plansText}</p>
-                        <p><strong>利用規約同意:</strong> はい</p>
+                        
+                        <p style="font-size: 1.2em; margin-top: 15px;">
+                            <strong>開発者への請求金額: <span style="color: #4CAF50;">${billingAmount}円</span></strong>
+                        </p>
+                        <p>※こちらの金額が、後ほど開発者が受け取りに伺う金額です。</p>
+                        
                         <hr>
                         ${fortiguardCheckHtml}
                         ${downloadHtml}
@@ -334,11 +345,10 @@
             } catch (error) {
                 console.error("❌ データの保存中にエラーが発生しました。エラー詳細:", error);
                 
-                // Missing or insufficient permissions. (権限不足エラー)が出た場合はこの画面が表示されます
                 document.body.innerHTML = `
                     <div class="success-page" style="border-color: red; background-color: #fce8e8;">
                         <h1>❌ エラーが発生しました</h1>
-                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、**Firestoreのセキュリティルール**を変更し、公開書き込みを許可してください。</p>
+                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、<strong>Firestoreのセキュリティルール</strong>を変更し、公開書き込みを許可してください。</p>
                         <p><a href="./">フォームに戻る</a></p>
                     </div>
                 `;
