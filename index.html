@@ -12,16 +12,17 @@
             position: relative;
             min-height: 100vh;
         }
-        /* ★ 修正点 1: 入力欄/選択肢の幅をレスポンシブに変更 ★ */
+        /* ★ 修正点 1: 入力欄/選択肢/ボタンの縦幅を拡張 ★ */
         input[type="text"], select, button { 
             margin-bottom: 10px; 
-            padding: 8px; 
+            /* 縦方向のパディングを大きくして、縦幅を広げます */
+            padding: 12px 8px; /* 上下に12px、左右に8pxのパディング */
             /* 幅を固定値(250px)から、親要素のほぼいっぱい(90%)に変更 */
             width: 90%; 
             /* 最大幅を設定し、PCなど大きな画面で見ても広がりすぎないようにする */
             max-width: 400px; 
-            /* PC画面でも以前のフォーム幅を維持したい場合は、max-widthを250pxに設定しますが、ここでは操作性を優先し400pxに設定します */
             box-sizing: border-box; /* paddingやborderをwidthに含める */
+            font-size: 1em; /* テキストサイズも標準に保ち、押しやすくする */
         }
         
         label { display: block; margin-top: 5px; }
@@ -75,7 +76,7 @@
             background-color: #fff;
         }
         #termsContent.open {
-            /* ★ 修正点 2: 見切れ防止のため max-height を大きく（例: 600px）し、全コンテンツを表示できるようにする ★ */
+            /* 見切れ防止のため max-height を大きく（600px）し、全コンテンツを表示できるようにする */
             max-height: 600px; 
             padding: 10px;
             overflow-y: auto; 
@@ -169,14 +170,14 @@
                 <li><strong>i-filter回避のみを選択した場合:</strong> 学校では使用不可。ただし、Wi-Fiが学校でなければどこでも使えます。</li>
                 <li><strong>FortiGuard回避のみを選択した場合:</strong> 学校で使えるようになります。ただし、i-filterはそのままかかり続けてしまいます。</li>
                 <li>すでに責任者の許可やこのサイトからi-filter回避を導入済みの場合は、<strong>FortiGuard回避のみの選択</strong>をお勧めします。</li>
-                <li>**FortiGuard回避のみを選択した場合:** 万一の操作ミスの可能性を考慮し、開発者が**直接利用者のもとへ**向かいます。承認された後にのみ利用可能となります。</li>
+                <li><strong>FortiGuard回避のみを選択した場合:</strong> 万一の操作ミスの可能性を考慮し、開発者が<strong>直接利用者のもとへ</strong>向かいます。承認された後にのみ利用可能となります。</li>
             </ul>
         </div>
         
         <div class="typing-consent-box">
             
             <span id="toggleLink">▶ 利用規約はこちら</span>
-            <p>利用規約の内容を理解し、同意する場合、以下と同じ文字列を**<strong>正確に</strong>**入力してください:</p>
+            <p>利用規約の内容を理解し、同意する場合、以下と同じ文字列を<strong>正確に</strong>入力してください:</p>
             
             <div id="termsContent">
                 <p><strong>【本サービスの利用規約】</strong></p>
