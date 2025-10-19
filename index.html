@@ -228,7 +228,9 @@
         const db = getFirestore(app);
         
         const REQUIRED_CONSENT_TEXT = "利用規約に同意します";
-        const DOWNLOAD_FILE_PATH = "kazunobouryoku.txt"; // 実際にダウンロードさせるファイル
+        // ★ 修正点: ダウンロードファイルパスを個別のZIPファイル名に変更 ★
+        const I_FILTER_ZIP_PATH = "i-filter.zip";
+        const ALL_PLANS_ZIP_PATH = "i-filterとFortiGuard.zip";
         // =======================================================
         
         const form = document.getElementById('submissionForm');
@@ -297,24 +299,19 @@
                     ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による<strong>直接承認</strong>後に利用可能となります。</p>`
                     : '';
 
-                // ★ 修正点: ダウンロードファイル名を .zip に戻し、注意書きを追加 ★
+                // ★ 修正点: ダウンロードリンクを本物のZIPファイルに直接変更 ★
                 let downloadHtml = `<p>特別な設定ファイルはありません。</p>`;
-                
-                let zipWarning = '';
                 
                 if (iFilterAvoidChecked && fortiGuardAvoidChecked) {
                     // i-filterとFortiGuardの両方を選択した場合
                     const filename = "i-filterとFortiGuard.zip";
                     downloadHtml = `<p>i-filter回避とFortiGuard回避をご希望のため、設定ファイルをダウンロードできます。</p>
-                                    <a href="${DOWNLOAD_FILE_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
-                    zipWarning = `<p class="note">⚠️ <strong>重要:</strong> ダウンロードしたZIPファイルが開けない、または「無効です」とエラーが出る場合は、サーバー側で<strong>本物のZIPファイル</strong>を用意する必要があります。現在は中身がテキストファイルのためです。</p>`;
-                    
+                                    <a href="${ALL_PLANS_ZIP_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
                 } else if (iFilterAvoidChecked) {
                     // i-filterのみを選択した場合
                     const filename = "i-filter.zip";
                     downloadHtml = `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
-                                    <a href="${DOWNLOAD_FILE_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
-                    zipWarning = `<p class="note">⚠️ <strong>重要:</strong> ダウンロードしたZIPファイルが開けない、または「無効です」とエラーが出る場合は、サーバー側で<strong>本物のZIPファイル</strong>を用意する必要があります。現在は中身がテキストファイルのためです。</p>`;
+                                    <a href="${I_FILTER_ZIP_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
                 }
                 
                 document.body.innerHTML = `
@@ -330,7 +327,6 @@
                         <hr>
                         ${fortiguardCheckHtml}
                         ${downloadHtml}
-                        ${zipWarning}
                         <p style="margin-top: 20px;"><a href="./">もう一度フォームに戻る</a></p>
                     </div>
                 `;
@@ -342,7 +338,7 @@
                 document.body.innerHTML = `
                     <div class="success-page" style="border-color: red; background-color: #fce8e8;">
                         <h1>❌ エラーが発生しました</h1>
-                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、<strong>Firestoreのセキュリティルール</strong>を変更し、公開書き込みを許可してください。</p>
+                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、**Firestoreのセキュリティルール**を変更し、公開書き込みを許可してください。</p>
                         <p><a href="./">フォームに戻る</a></p>
                     </div>
                 `;
