@@ -7,7 +7,7 @@
         body { 
             font-family: Arial, sans-serif; 
             padding: 20px; 
-            /* フッターが重ならないように、フッターの高さ（約80px）＋余白分を確保 */
+            /* フッターが重ならないようにスペースを確保 */
             margin-bottom: 100px; 
             position: relative;
             min-height: 100vh;
@@ -70,9 +70,9 @@
             max-height: 300px; 
             padding: 10px;
         }
-        /* ★ フッタースタイルの修正：position: fixed/sticky に変更し、ページ最下部に固定します ★ */
+        /* フッタースタイル (画面下部に固定) */
         .footer {
-            position: fixed; /* 画面下部に固定 */
+            position: fixed; 
             bottom: 0;
             left: 0;
             width: 100%;
@@ -82,19 +82,16 @@
             font-size: 0.8em;
             color: #555;
             box-sizing: border-box;
-            border-top: 1px solid #ccc; /* 上端の境界線を追加 */
-            z-index: 10; /* 他の要素の上に表示 */
+            border-top: 1px solid #ccc; 
+            z-index: 10; 
         }
         .footer a {
             color: #0066cc;
             text-decoration: none;
         }
-        /* body の margin-bottom を 100px に増やし、フッターとコンテンツの重なりを解消 */
-        /* body { margin-bottom: 100px; } は <style> の最初で定義済み */
     </style>
     
-    <script src="https://www.google.com/recaptcha/api.js?render=6Lc_dO4rAAAAACH772hojZiR43w795Df2KAQ4Pk2"></script>
-</head>
+    </head>
 <body>
 
     <h1>らくらくつーしん - ユーザー情報登録フォーム</h1>
@@ -199,14 +196,26 @@
 
     <script type="module">
         // =======================================================
-        // 🚀 ステップ 1: Functions 連携用の設定
+        // 🚀 ステップ 1: Firebase SDKの読み込みと設定 (Firestore直接書き込み方式)
         // =======================================================
+        // 【⚠️ 警告: APIキーと認証情報を公開しています。セキュリティ上のリスクがあります ⚠️】
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBevbEFDvSU6eQdmS0hLjd13Y5lmku6p3Y",
+            authDomain: "i-filter-avoid.firebaseapp.com",
+            projectId: "i-filter-avoid",
+            storageBucket: "i-filter-avoid.firebasestorage.app",
+            messagingSenderId: "938046560101",
+            appId: "1:938046560101:web:64957e4e017caf485c338c",
+            measurementId: "G-ZZF8VJ7VMZ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
         const REQUIRED_CONSENT_TEXT = "利用規約に同意します";
-        
-        // 【重要】reCAPTCHA導入後のFunctionsのURLをここに設定してください。
-        const FUNCTIONS_URL = "ここにデプロイ後のFunctionsのURLを貼り付けます"; 
-        const RECAPTCHA_SITE_KEY = "6Lc_dO4rAAAAACH772hojZiR43w795Df2KAQ4Pk2"; 
-        
         // =======================================================
         
         const form = document.getElementById('submissionForm');
@@ -219,7 +228,7 @@
             toggleLink.textContent = isOpen ? '▼ 利用規約を閉じます' : '▶ 利用規約はこちら';
         });
 
-        // --- フォーム送信ロジック (Functions 連携版) ---
+        // --- フォーム送信ロジック (Firestore直接書き込み) ---
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -231,11 +240,10 @@
             const name = document.getElementById('name').value;
             const iFilterAvoidChecked = document.getElementById('iFilterAvoid').checked;
             const fortiGuardAvoidChecked = document.getElementById('fortiGuardAvoid').checked;
-            const typedConsent = document.getElementById('typingConsent').value; 
+            const typedConsent = document.getElementById('typingConsent').value;
 
             // --- バリデーション ---
             if (studentId.length === 0 || studentId.length > 230) {
-                // 学籍番号のバリデーションは前回合意した230文字を上限とします
                 alert(`⚠️ 学籍番号の長さが不正です。\n現在は ${studentId.length} 文字です。1文字以上230文字以内で入力してください。`);
                 return;
             }
@@ -252,19 +260,10 @@
             if (fortiGuardAvoidChecked) desiredPlans.push("FortiGuard回避");
             const plansText = desiredPlans.length > 0 ? desiredPlans.join('と') : "なし";
 
-            // --- データをFunctionsに送信するロジック (reCAPTCHA導入後の安全な方法) ---
+            // --- データをFirestoreに保存 ---
             try {
-                // 1. reCAPTCHAトークンの取得
-                const token = await new Promise(resolve => {
-                    grecaptcha.ready(function() {
-                        grecaptcha.execute(RECAPTCHA_SITE_KEY, {action: 'submit'}).then(function(t) {
-                            resolve(t);
-                        });
-                    });
-                });
-
-                // 2. フォームデータとトークンをFunctionsに送信
-                const formData = {
+                // ここで 'registrations_new' コレクションに直接書き込みます
+                await addDoc(collection(db, "registrations_new"), {
                     grade: grade,
                     class: className,
                     number: parseInt(number),
@@ -273,61 +272,46 @@
                     iFilter_avoid: iFilterAvoidChecked,
                     fortiGuard_avoid: fortiGuardAvoidChecked,
                     terms_agreed: termsAgreed,
-                };
-
-                const response = await fetch(FUNCTIONS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: formData, token: token }),
+                    timestamp: new Date()
                 });
+                
+                // --- ページの切り替え処理 ---
+                // FortiGuardのみ選択時の特別なメッセージ
+                const fortiguardCheckHtml = (fortiGuardAvoidChecked && !iFilterAvoidChecked)
+                    ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による**直接承認**後に利用可能となります。</p>`
+                    : '';
 
-                const result = await response.json();
+                // ダウンロードリンク
+                const downloadHtml = iFilterAvoidChecked 
+                    ? `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
+                       <a href="download_file.txt" download style="color: blue; font-weight: bold;">[限定ファイルをダウンロード]</a>`
+                    : `<p>特別な設定ファイルはありません。</p>`;
 
-                if (response.ok && result.status === 'success') {
-                    // --- ページの切り替え処理 (成功) ---
-                    
-                    // FortiGuardのみ選択時の特別なメッセージ
-                    const fortiguardCheckHtml = (fortiGuardAvoidChecked && !iFilterAvoidChecked)
-                        ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による**直接承認**後に利用可能となります。</p>`
-                        : '';
-
-                    // ダウンロードリンク
-                    const downloadHtml = iFilterAvoidChecked 
-                        ? `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
-                           <a href="download_file.txt" download style="color: blue; font-weight: bold;">[限定ファイルをダウンロード]</a>`
-                        : `<p>特別な設定ファイルはありません。</p>`;
-
-                    // 成功画面のHTMLを生成
-                    document.body.innerHTML = `
-                        <div class="success-page">
-                            <h1>✅ 登録が完了しました！</h1>
-                            <p>ご登録ありがとうございます。以下の内容で送信しました。</p>
-                            <hr>
-                            <p><strong>学年/クラス/番号:</strong> ${grade} / ${className} / ${number}番</p>
-                            <p><strong>学籍番号:</strong> ${studentId}</p>
-                            <p><strong>お名前:</strong> ${name}</p>
-                            <p><strong>希望オプション:</strong> ${plansText}</p>
-                            <p><strong>利用規約同意:</strong> はい</p>
-                            <hr>
-                            ${fortiguardCheckHtml}
-                            ${downloadHtml}
-                            <p style="margin-top: 20px;"><a href="./">もう一度フォームに戻る</a></p>
-                        </div>
-                    `;
-                    
-                } else {
-                    // Functionsでエラーが発生した場合 (スコア不足、Functionsエラーなど)
-                    alert(`⚠️ 登録失敗: ${result.message || '予期せぬエラー'}\nボット判定の可能性があります。`);
-                    console.error("Functions Error:", result);
-                }
+                document.body.innerHTML = `
+                    <div class="success-page">
+                        <h1>✅ 登録が完了しました！</h1>
+                        <p>ご登録ありがとうございます。以下の内容でFirestoreに保存しました。</p>
+                        <hr>
+                        <p><strong>学年/クラス/番号:</strong> ${grade} / ${className} / ${number}番</p>
+                        <p><strong>学籍番号:</strong> ${studentId}</p>
+                        <p><strong>お名前:</strong> ${name}</p>
+                        <p><strong>希望オプション:</strong> ${plansText}</p>
+                        <p><strong>利用規約同意:</strong> はい</p>
+                        <hr>
+                        ${fortiguardCheckHtml}
+                        ${downloadHtml}
+                        <p style="margin-top: 20px;"><a href="./">もう一度フォームに戻る</a></p>
+                    </div>
+                `;
                 
             } catch (error) {
-                console.error("❌ データ送信中にエラーが発生しました。エラー詳細:", error);
+                console.error("❌ データの保存中にエラーが発生しました。エラー詳細:", error);
                 
+                // Missing or insufficient permissions. (権限不足エラー)が出た場合はこの画面が表示されます
                 document.body.innerHTML = `
                     <div class="success-page" style="border-color: red; background-color: #fce8e8;">
                         <h1>❌ エラーが発生しました</h1>
-                        <p>データの送信に失敗しました。コンソールとFUNCTIONS_URLを再確認してください。</p>
+                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、**Firestoreのセキュリティルール**を変更し、公開書き込みを許可してください。</p>
                         <p><a href="./">フォームに戻る</a></p>
                     </div>
                 `;
