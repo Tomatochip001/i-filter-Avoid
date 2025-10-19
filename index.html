@@ -228,6 +228,7 @@
         const db = getFirestore(app);
         
         const REQUIRED_CONSENT_TEXT = "利用規約に同意します";
+        const DOWNLOAD_FILE_PATH = "kazunobouryoku.txt"; // 実際にダウンロードさせるファイル
         // =======================================================
         
         const form = document.getElementById('submissionForm');
@@ -296,12 +297,21 @@
                     ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による<strong>直接承認</strong>後に利用可能となります。</p>`
                     : '';
 
-                // ★ 修正点 3: i-filter回避が選択された場合のみダウンロードリンクを表示し、ファイルを指定 ★
-                const downloadHtml = iFilterAvoidChecked 
-                    ? `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
-                       <a href="kazunobouryoku.txt" download="kazunobouryoku.txt" style="color: blue; font-weight: bold;">[限定ファイルをダウンロード]</a>`
-                    : `<p>特別な設定ファイルはありません。</p>`;
-
+                // ★ 修正点: 選択に応じてダウンロードリンクを切り替えるロジック ★
+                let downloadHtml = `<p>特別な設定ファイルはありません。</p>`;
+                
+                if (iFilterAvoidChecked && fortiGuardAvoidChecked) {
+                    // i-filterとFortiGuardの両方を選択した場合
+                    const filename = "i-filterとFortiGuard.zip";
+                    downloadHtml = `<p>i-filter回避とFortiGuard回避をご希望のため、設定ファイルをダウンロードできます。</p>
+                                    <a href="${DOWNLOAD_FILE_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
+                } else if (iFilterAvoidChecked) {
+                    // i-filterのみを選択した場合
+                    const filename = "i-filter.zip";
+                    downloadHtml = `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
+                                    <a href="${DOWNLOAD_FILE_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
+                }
+                
                 document.body.innerHTML = `
                     <div class="success-page">
                         <h1>✅ 登録が完了しました！</h1>
