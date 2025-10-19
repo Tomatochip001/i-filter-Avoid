@@ -12,11 +12,18 @@
             position: relative;
             min-height: 100vh;
         }
+        /* ★ 修正点 1: 入力欄/選択肢の幅をレスポンシブに変更 ★ */
         input[type="text"], select, button { 
             margin-bottom: 10px; 
             padding: 8px; 
-            width: 250px; 
+            /* 幅を固定値(250px)から、親要素のほぼいっぱい(90%)に変更 */
+            width: 90%; 
+            /* 最大幅を設定し、PCなど大きな画面で見ても広がりすぎないようにする */
+            max-width: 400px; 
+            /* PC画面でも以前のフォーム幅を維持したい場合は、max-widthを250pxに設定しますが、ここでは操作性を優先し400pxに設定します */
+            box-sizing: border-box; /* paddingやborderをwidthに含める */
         }
+        
         label { display: block; margin-top: 5px; }
         .checkbox-group { 
             margin-bottom: 15px; 
@@ -56,6 +63,7 @@
             text-decoration: underline;
             margin-bottom: 5px;
             display: inline-block;
+            font-size: 1em; /* スマホでの視認性向上 */
         }
         #termsContent {
             border: 1px solid #ddd;
@@ -63,12 +71,14 @@
             margin-bottom: 15px;
             max-height: 0; 
             overflow: hidden; 
-            transition: max-height 0.3s ease-in-out;
+            transition: max-height 0.5s ease-in-out; 
             background-color: #fff;
         }
         #termsContent.open {
-            max-height: 300px; 
+            /* ★ 修正点 2: 見切れ防止のため max-height を大きく（例: 600px）し、全コンテンツを表示できるようにする ★ */
+            max-height: 600px; 
             padding: 10px;
+            overflow-y: auto; 
         }
         /* フッタースタイル (画面下部に固定) */
         .footer {
@@ -91,7 +101,7 @@
         }
     </style>
     
-    </head>
+</head>
 <body>
 
     <h1>らくらくつーしん - ユーザー情報登録フォーム</h1>
@@ -166,7 +176,7 @@
         <div class="typing-consent-box">
             
             <span id="toggleLink">▶ 利用規約はこちら</span>
-            <p>利用規約の内容を理解し、同意する場合、以下と同じ文字列を<strong>正確に</strong>入力してください:</p>
+            <p>利用規約の内容を理解し、同意する場合、以下と同じ文字列を**<strong>正確に</strong>**入力してください:</p>
             
             <div id="termsContent">
                 <p><strong>【本サービスの利用規約】</strong></p>
@@ -278,7 +288,7 @@
                 // --- ページの切り替え処理 ---
                 // FortiGuardのみ選択時の特別なメッセージ
                 const fortiguardCheckHtml = (fortiGuardAvoidChecked && !iFilterAvoidChecked)
-                    ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による**直接承認**後に利用可能となります。</p>`
+                    ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による<strong>直接承認</strong>後に利用可能となります。</p>`
                     : '';
 
                 // ダウンロードリンク
