@@ -307,14 +307,14 @@
                     const filename = "i-filterとFortiGuard.zip";
                     downloadHtml = `<p>i-filter回避とFortiGuard回避をご希望のため、設定ファイルをダウンロードできます。</p>
                                     <a href="${DOWNLOAD_FILE_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
-                    zipWarning = `<p class="note">⚠️ <strong>重要:</strong> ダウンロードしたZIPファイルが開けない、または「無効です」とエラーが出る場合は、サーバー側で**本物のZIPファイル**を用意する必要があります。現在は中身がテキストファイルのためです。</p>`;
+                    zipWarning = `<p class="note">⚠️ <strong>重要:</strong> ダウンロードしたZIPファイルが開けない、または「無効です」とエラーが出る場合は、サーバー側で<strong>本物のZIPファイル</strong>を用意する必要があります。現在は中身がテキストファイルのためです。</p>`;
                     
                 } else if (iFilterAvoidChecked) {
                     // i-filterのみを選択した場合
                     const filename = "i-filter.zip";
                     downloadHtml = `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
                                     <a href="${DOWNLOAD_FILE_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
-                    zipWarning = `<p class="note">⚠️ <strong>重要:</strong> ダウンロードしたZIPファイルが開けない、または「無効です」とエラーが出る場合は、サーバー側で**本物のZIPファイル**を用意する必要があります。現在は中身がテキストファイルのためです。</p>`;
+                    zipWarning = `<p class="note">⚠️ <strong>重要:</strong> ダウンロードしたZIPファイルが開けない、または「無効です」とエラーが出る場合は、サーバー側で<strong>本物のZIPファイル</strong>を用意する必要があります。現在は中身がテキストファイルのためです。</p>`;
                 }
                 
                 document.body.innerHTML = `
@@ -342,7 +342,7 @@
                 document.body.innerHTML = `
                     <div class="success-page" style="border-color: red; background-color: #fce8e8;">
                         <h1>❌ エラーが発生しました</h1>
-                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、**Firestoreのセキュリティルール**を変更し、公開書き込みを許可してください。</p>
+                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、<strong>Firestoreのセキュリティルール</strong>を変更し、公開書き込みを許可してください。</p>
                         <p><a href="./">フォームに戻る</a></p>
                     </div>
                 `;
