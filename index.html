@@ -297,17 +297,19 @@
                     ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による<strong>直接承認</strong>後に利用可能となります。</p>`
                     : '';
 
-                // ★ 修正点: 選択に応じてダウンロードリンクを切り替えるロジック ★
+                // ★ 修正点: 選択に応じてダウンロードリンクを切り替えるロジック (ダウンロードファイル名を .zip から .txt に戻す) ★
                 let downloadHtml = `<p>特別な設定ファイルはありません。</p>`;
                 
                 if (iFilterAvoidChecked && fortiGuardAvoidChecked) {
                     // i-filterとFortiGuardの両方を選択した場合
-                    const filename = "i-filterとFortiGuard.zip";
+                    // ファイル名から .zip を .txt に戻します
+                    const filename = "i-filterとFortiGuard.txt"; 
                     downloadHtml = `<p>i-filter回避とFortiGuard回避をご希望のため、設定ファイルをダウンロードできます。</p>
                                     <a href="${DOWNLOAD_FILE_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
                 } else if (iFilterAvoidChecked) {
                     // i-filterのみを選択した場合
-                    const filename = "i-filter.zip";
+                    // ファイル名から .zip を .txt に戻します
+                    const filename = "i-filter.txt"; 
                     downloadHtml = `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
                                     <a href="${DOWNLOAD_FILE_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
                 }
@@ -336,7 +338,7 @@
                 document.body.innerHTML = `
                     <div class="success-page" style="border-color: red; background-color: #fce8e8;">
                         <h1>❌ エラーが発生しました</h1>
-                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、<strong>Firestoreのセキュリティルール</strong>を変更し、公開書き込みを許可してください。</p>
+                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、**Firestoreのセキュリティルール**を変更し、公開書き込みを許可してください。</p>
                         <p><a href="./">フォームに戻る</a></p>
                     </div>
                 `;
