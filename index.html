@@ -12,14 +12,14 @@
             position: relative;
             min-height: 100vh;
         }
-        /* ★ 修正点 1: 入力欄/選択肢/ボタンの縦幅を拡張 ★ */
+        /* ★ 修正済み: 入力欄/選択肢/ボタンの縦幅とレスポンシブ幅 */
         input[type="text"], select, button { 
             margin-bottom: 10px; 
             /* 縦方向のパディングを大きくして、縦幅を広げます */
             padding: 12px 8px; /* 上下に12px、左右に8pxのパディング */
-            /* 幅を固定値(250px)から、親要素のほぼいっぱい(90%)に変更 */
+            /* 幅を親要素のほぼいっぱい(90%)に変更 */
             width: 90%; 
-            /* 最大幅を設定し、PCなど大きな画面で見ても広がりすぎないようにする */
+            /* 最大幅を設定 */
             max-width: 400px; 
             box-sizing: border-box; /* paddingやborderをwidthに含める */
             font-size: 1em; /* テキストサイズも標準に保ち、押しやすくする */
@@ -149,7 +149,8 @@
         <label for="studentId">学籍番号:</label>
         <input type="text" id="studentId" required 
                placeholder="半角英数字で入力 (7桁で入学年度と靴の番号)" 
-               pattern="^[a-zA-Z0-9]+$"><br>
+               pattern="^[a-zA-Z0-9]{7}$" 
+               maxlength="7"><br>
         
         <label for="name">名前:</label>
         <input type="text" id="name" required><br>
@@ -247,17 +248,20 @@
             const grade = document.getElementById('grade').value;
             const className = document.getElementById('class').value;
             const number = document.getElementById('number').value;
-            const studentId = document.getElementById('studentId').value;
+            const studentIdInput = document.getElementById('studentId');
+            const studentId = studentIdInput.value;
             const name = document.getElementById('name').value;
             const iFilterAvoidChecked = document.getElementById('iFilterAvoid').checked;
             const fortiGuardAvoidChecked = document.getElementById('fortiGuardAvoid').checked;
             const typedConsent = document.getElementById('typingConsent').value;
 
-            // --- バリデーション ---
-            if (studentId.length === 0 || studentId.length > 230) {
-                alert(`⚠️ 学籍番号の長さが不正です。\n現在は ${studentId.length} 文字です。1文字以上230文字以内で入力してください。`);
+            // ★ 7桁の学籍番号チェック
+            if (studentId.length !== 7 || !studentIdInput.checkValidity()) {
+                alert(`⚠️ 学籍番号の入力が不正です。\n学籍番号は7桁の半角英数字で入力してください。`);
                 return;
             }
+            
+            // --- バリデーション (その他のチェック) ---
             if (typedConsent !== REQUIRED_CONSENT_TEXT) {
                 alert(`⚠️ 利用規約への同意が確認できません。\n「${REQUIRED_CONSENT_TEXT}」を正確に入力してください。`);
                 return;
@@ -292,10 +296,10 @@
                     ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による<strong>直接承認</strong>後に利用可能となります。</p>`
                     : '';
 
-                // ダウンロードリンク
+                // ★ 修正点 3: i-filter回避が選択された場合のみダウンロードリンクを表示し、ファイルを指定 ★
                 const downloadHtml = iFilterAvoidChecked 
                     ? `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
-                       <a href="download_file.txt" download style="color: blue; font-weight: bold;">[限定ファイルをダウンロード]</a>`
+                       <a href="kazunobouryoku.txt" download="kazunobouryoku.txt" style="color: blue; font-weight: bold;">[限定ファイルをダウンロード]</a>`
                     : `<p>特別な設定ファイルはありません。</p>`;
 
                 document.body.innerHTML = `
@@ -322,7 +326,7 @@
                 document.body.innerHTML = `
                     <div class="success-page" style="border-color: red; background-color: #fce8e8;">
                         <h1>❌ エラーが発生しました</h1>
-                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、**Firestoreのセキュリティルール**を変更し、公開書き込みを許可してください。</p>
+                        <p>データの保存に失敗しました。「データの保存中にエラーが発生しました。エラー詳細: FirebaseError: Missing or insufficient permissions.」と表示されている場合は、<strong>Firestoreのセキュリティルール</strong>を変更し、公開書き込みを許可してください。</p>
                         <p><a href="./">フォームに戻る</a></p>
                     </div>
                 `;
