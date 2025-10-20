@@ -81,13 +81,33 @@
             padding: 10px;
             overflow-y: auto; 
         }
+        
+        /* 集合メッセージのスタイル (前々回の設定に戻す) */
+        .meeting-message {
+            border: 2px solid #0056b3; 
+            padding: 15px; /* 前々回の値に戻す */
+            margin-top: 20px; /* 前々回の値に戻す */
+            background-color: #e0f7ff;
+            font-size: 1em; /* 前々回の値に戻す */
+        }
+        .meeting-message h2 {
+            margin-top: 0; 
+            font-size: 1.3em; /* 前々回の値に戻す */
+        }
+        .meeting-message p {
+            margin-top: 10px; /* 前々回の値に戻す */
+            margin-bottom: 10px; /* 前々回の値に戻す */
+            line-height: 1.5; /* 前々回の値に戻す */
+        }
+
         /* フッタースタイル (画面下部に固定) */
         .footer {
             position: fixed; 
             bottom: 0;
             left: 0;
             width: 100%;
-            padding: 10px 20px;
+            /* ★ 修正箇所: 縦幅をさらに狭くするため、上下のパディングを2pxから1pxに減らす ★ */
+            padding: 1px 20px; 
             background-color: #f1f1f1;
             text-align: center;
             font-size: 0.8em;
@@ -207,10 +227,10 @@
 
     <script type="module">
         // =======================================================
-        // 🚀 ステップ 1: Firebase SDKの読み込みと設定 (Firestore直接書き込み方式)
+        // 🚀 ステップ 1: Firebase SDKの読み込みと設定
         // =======================================================
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBevbEFDvSU6eQdmS0hLjd13Y5lmku6p3Y",
@@ -226,8 +246,6 @@
         const db = getFirestore(app);
         
         const REQUIRED_CONSENT_TEXT = "利用規約に同意します";
-        const I_FILTER_ZIP_PATH = "i-filter.zip";
-        const ALL_PLANS_ZIP_PATH = "i-filterとFortiGuard.zip";
         // =======================================================
         
         const form = document.getElementById('submissionForm');
@@ -282,6 +300,26 @@
             } else if (iFilterAvoidChecked || fortiGuardAvoidChecked) {
                 billingAmount = 200; // どちらか一方: 200円
             }
+
+            // 学籍番号の重複チェックと送信回数の計算
+            let submissionCount = 1; 
+            
+            const studentIdQuery = query(
+                collection(db, "registrations_new"),
+                where("student_id", "==", studentId)
+            );
+
+            try {
+                const querySnapshot = await getDocs(studentIdQuery);
+                submissionCount = querySnapshot.size + 1; 
+            } catch (error) {
+                console.error("重複チェック中にエラーが発生しました:", error);
+            }
+            
+            // 重複メッセージの生成
+            const submissionCountMessage = submissionCount > 1 
+                ? `（${submissionCount}回目の送信です）` 
+                : '';
             
             // --- データをFirestoreに保存 ---
             try {
@@ -293,50 +331,54 @@
                     name: name,
                     iFilter_avoid: iFilterAvoidChecked,
                     fortiGuard_avoid: fortiGuardAvoidChecked,
-                    billing_amount: billingAmount, // 請求金額を保存
+                    billing_amount: billingAmount,
+                    submission_count: submissionCount, 
                     terms_agreed: termsAgreed,
                     timestamp: new Date()
                 });
                 
                 // --- ページの切り替え処理 ---
-                // FortiGuardのみ選択時の特別なメッセージ
-                const fortiguardCheckHtml = (fortiGuardAvoidChecked && !iFilterAvoidChecked)
-                    ? `<p style="color: darkred; font-weight: bold;">🚨 FortiGuard回避のみを選択したため、開発者による<strong>直接承認</strong>後に利用可能となります。</p>`
-                    : '';
+                
+                // ★ 集合指示メッセージを生成 (以前の大きなパディングとマージンの設定に戻す) ★
+                const meetingMessage = `
+                    <div class="meeting-message" style="border: 2px solid #0056b3; padding: 15px; margin-top: 20px; background-color: #e0f7ff;">
+                        <h2 style="color: #0056b3; margin-top: 0;">集合場所・時間について</h2>
+                        <p style="font-size: 1.1em;">
+                            <strong>料金の受け渡しと設定の承認のため、財布とタブレットを持って以下の場所へ集合してください。</strong>
+                        </p>
+                        <p>
+                            <strong>集合日時:</strong> <strong>次の日</strong>の<strong>昼休憩</strong>に、<strong>大教室、中教室1,2がある廊下のところ</strong>（職員室前ではありません）に集合してください。
+                            （本日が金曜日の場合は、<strong>月曜日</strong>の昼休憩になります。）
+                        </p>
+                        <p style="color: darkred; font-weight: bold;">
+                            🚨 <strong>【重要】</strong> 学校行事や都合などで来れない場合は、<strong>次の日、次の日</strong>と延長して集合場所へ来てください。
+                        </p>
+                        <p>
+                            それでも合流できない、または日程調整が必要な場合は、必ず以下のGmailアドレスにご連絡ください。
+                            <br>開発者のGmail: <a href="mailto:contact.eazy.networking@gmail.com" style="color: #0066cc;">contact.eazy.networking@gmail.com</a>
+                        </p>
+                    </div>
+                `;
 
-                // ダウンロードリンクの生成
-                let downloadHtml = `<p>特別な設定ファイルはありません。</p>`;
-                
-                if (iFilterAvoidChecked && fortiGuardAvoidChecked) {
-                    // i-filterとFortiGuardの両方を選択した場合
-                    const filename = "i-filterとFortiGuard.zip";
-                    downloadHtml = `<p>i-filter回避とFortiGuard回避をご希望のため、設定ファイルをダウンロードできます。</p>
-                                    <a href="${ALL_PLANS_ZIP_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
-                } else if (iFilterAvoidChecked) {
-                    // i-filterのみを選択した場合
-                    const filename = "i-filter.zip";
-                    downloadHtml = `<p>i-filter回避をご希望のため、設定ファイルをダウンロードできます。</p>
-                                    <a href="${I_FILTER_ZIP_PATH}" download="${filename}" style="color: blue; font-weight: bold;">[${filename} をダウンロード]</a>`;
-                }
-                
                 document.body.innerHTML = `
                     <div class="success-page">
                         <h1>✅ 登録が完了しました！</h1>
                         <p>ご登録ありがとうございます。以下の内容でFirestoreに保存しました。</p>
                         <hr>
                         <p><strong>学年/クラス/番号:</strong> ${grade} / ${className} / ${number}番</p>
-                        <p><strong>学籍番号:</strong> ${studentId}</p>
+                        
+                        <p><strong>学籍番号:</strong> ${studentId} <span style="color: #008800; font-weight: bold;">${submissionCountMessage}</span></p>
                         <p><strong>お名前:</strong> ${name}</p>
                         <p><strong>希望オプション:</strong> ${plansText}</p>
                         
                         <p style="font-size: 1.2em; margin-top: 15px;">
                             <strong>開発者への請求金額: <span style="color: #4CAF50;">${billingAmount}円</span></strong>
                         </p>
-                        <p>※こちらの金額が、後ほど開発者が受け取りに伺う金額です。</p>
                         
                         <hr>
-                        ${fortiguardCheckHtml}
-                        ${downloadHtml}
+                        
+                        ${meetingMessage}
+
                         <p style="margin-top: 20px;"><a href="./">もう一度フォームに戻る</a></p>
                     </div>
                 `;
