@@ -82,22 +82,22 @@
             overflow-y: auto; 
         }
         
-        /* 集合メッセージのスタイル (前々回の設定に戻す) */
+        /* 集合メッセージのスタイル */
         .meeting-message {
             border: 2px solid #0056b3; 
-            padding: 15px; /* 前々回の値に戻す */
-            margin-top: 20px; /* 前々回の値に戻す */
+            padding: 15px;
+            margin-top: 20px;
             background-color: #e0f7ff;
-            font-size: 1em; /* 前々回の値に戻す */
+            font-size: 1em;
         }
         .meeting-message h2 {
             margin-top: 0; 
-            font-size: 1.3em; /* 前々回の値に戻す */
+            font-size: 1.3em; 
         }
         .meeting-message p {
-            margin-top: 10px; /* 前々回の値に戻す */
-            margin-bottom: 10px; /* 前々回の値に戻す */
-            line-height: 1.5; /* 前々回の値に戻す */
+            margin-top: 10px;
+            margin-bottom: 10px;
+            line-height: 1.5;
         }
 
         /* フッタースタイル (画面下部に固定) */
@@ -106,7 +106,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            /* ★ 修正箇所: 縦幅をさらに狭くするため、上下のパディングを2pxから1pxに減らす ★ */
+            /* ★ 修正箇所: 縦幅をさらに狭くするため、上下のパディングを1pxに設定 ★ */
             padding: 1px 20px; 
             background-color: #f1f1f1;
             text-align: center;
@@ -172,6 +172,9 @@
                pattern="^[a-zA-Z0-9]{7}$" 
                maxlength="7"><br>
         
+        <label for="nanzanTripName">南山生であることを確認します。<br>あなたの中3の修学旅行は何と呼ばれていますか？</label>
+        <input type="text" id="nanzanTripName" required 
+               placeholder="答えを入力してください"><br>
         <label for="name">名前:</label>
         <input type="text" id="name" required><br>
         
@@ -246,6 +249,8 @@
         const db = getFirestore(app);
         
         const REQUIRED_CONSENT_TEXT = "利用規約に同意します";
+        // ★ 追加箇所: 南山生確認の答えを定数として定義 ★
+        const NANZAN_TRIP_ANSWER = "旅";
         // =======================================================
         
         const form = document.getElementById('submissionForm');
@@ -268,6 +273,7 @@
             const number = document.getElementById('number').value;
             const studentIdInput = document.getElementById('studentId');
             const studentId = studentIdInput.value;
+            const nanzanTripName = document.getElementById('nanzanTripName').value; // ★ 追加箇所: 新しい質問の回答を取得 ★
             const name = document.getElementById('name').value;
             const iFilterAvoidChecked = document.getElementById('iFilterAvoid').checked;
             const fortiGuardAvoidChecked = document.getElementById('fortiGuardAvoid').checked;
@@ -276,6 +282,12 @@
             // 7桁の学籍番号チェック
             if (studentId.length !== 7 || !studentIdInput.checkValidity()) {
                 alert(`⚠️ 学籍番号の入力が不正です。\n学籍番号は7桁の半角英数字で入力してください。`);
+                return;
+            }
+            
+            // ★ 追加箇所: 南山生確認のチェック ★
+            if (nanzanTripName.trim().toUpperCase() !== NANZAN_TRIP_ANSWER.toUpperCase()) {
+                alert(`⚠️ 南山生であることの確認ができませんでした。\n「あなたの中3の修学旅行は何と呼ばれていますか？」の答えが違います。`);
                 return;
             }
             
@@ -334,17 +346,18 @@
                     billing_amount: billingAmount,
                     submission_count: submissionCount, 
                     terms_agreed: termsAgreed,
+                    nanzan_trip_name: nanzanTripName, // ★ 追加箇所: 回答を保存 ★
                     timestamp: new Date()
                 });
                 
                 // --- ページの切り替え処理 ---
                 
-                // ★ 集合指示メッセージを生成 (以前の大きなパディングとマージンの設定に戻す) ★
+                // 集合指示メッセージを生成
                 const meetingMessage = `
-                    <div class="meeting-message" style="border: 2px solid #0056b3; padding: 15px; margin-top: 20px; background-color: #e0f7ff;">
+                    <div class="meeting-message">
                         <h2 style="color: #0056b3; margin-top: 0;">集合場所・時間について</h2>
                         <p style="font-size: 1.1em;">
-                            <strong>料金の受け渡しと設定の承認のため、財布とタブレットと身分証を持って以下の場所へ集合してください。</strong>
+                            <strong>料金の受け渡しと設定の承認のため、以下の場所へ集合してください。</strong>
                         </p>
                         <p>
                             <strong>集合日時:</strong> <strong>次の日</strong>の<strong>昼休憩</strong>に、<strong>大教室、中教室1,2がある廊下のところ</strong>（職員室前ではありません）に集合してください。
